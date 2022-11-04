@@ -21,7 +21,7 @@ public:
 		this->io = io;
 		this->depth = depth_in;
 		this->leave_n = 1<<(depth_in-1);
-		m = new block[depth-1];
+		m = new block[depth-1]; // `m` to store received OT messages
 		b = new bool[depth-1];
 	}
 
@@ -34,7 +34,7 @@ public:
 		choice_pos = 0;
 		for(int i = 0; i < depth-1; ++i) {
 			choice_pos<<=1;
-			if(!b[i])
+			if(!b[i]) // `b` is the choise bits for receiving GGM tree messages. `choise_pos = (!b[0],!b[1],...,!b[depth-1])`
 				choice_pos +=1;
 		}
 		return choice_pos;
@@ -68,8 +68,8 @@ public:
 		TwoKeyPRP prp(zero_block, makeBlock(0, 1));
 		for(int i = 1; i < depth; ++i) {
 			to_fill_idx = to_fill_idx * 2;
-			ggm_tree[to_fill_idx] = ggm_tree[to_fill_idx+1] = zero_block;
-			if(b[i-1] == false) {
+			ggm_tree[to_fill_idx] = ggm_tree[to_fill_idx+1] = zero_block; // two undefined children nodes, one will be filled
+			if(b[i-1] == false) {// `b[i-1] = 0` <=> `choice_pos[i] = 1`
 				layer_recover(i, 0, to_fill_idx, m[i-1], &prp);
 				to_fill_idx += 1;
 			} else layer_recover(i, 1, to_fill_idx+1, m[i-1], &prp);
@@ -101,8 +101,8 @@ public:
 		block digest[2];
 		hash.hash_once(digest, &secret_sum_f2, sizeof(block));
 		uni_hash_coeff_gen(chi, digest[0], leave_n);
-		*chi_alpha = chi[choice_pos];
-		vector_inn_prdt_sum_red(W, chi, ggm_tree, leave_n);
+		*chi_alpha = chi[choice_pos]; // pass `chi[choice_pos]` to the outter caller
+		vector_inn_prdt_sum_red(W, chi, ggm_tree, leave_n); // `W = Sum_i chi[i] * ggm_tree[i]`. Note that `W = V + chi[choise_pos] * Delta` where `Delta` is hold by the sender.
 		delete[] chi;
 	}
 };
