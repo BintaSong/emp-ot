@@ -22,7 +22,7 @@ public:
 
 	PRG prg;
 	IO *netio;
-	IO **ios;
+	IO **ios; //its length equals to the number of threaeds
 	block Delta_f2k;
 	block *consist_check_chi_alpha = nullptr, *consist_check_VW = nullptr;
 	ThreadPool *pool;
@@ -151,7 +151,7 @@ public:
 	void exec_f2k_sender(SPCOT_Sender<IO> *sender, OTPre<IO> *ot, 
 			block *ggm_tree_mem, IO *io, int i) {
 		sender->compute(ggm_tree_mem, Delta_f2k);
-		sender->template send_f2k<OTPre<IO>>(ot, io, i);
+		sender->template send_f2k<OTPre<IO>>(ot, io, i); // why put "templete" here? see https://stackoverflow.com/questions/7397934/calling-template-function-within-template-class
 		io->flush();
 		if(is_malicious)
 			sender->consistency_check_msg_gen(consist_check_VW+i);
@@ -167,33 +167,33 @@ public:
 
 	// f2k consistency check
 	void consistency_check_f2k(block *pre_cot_data, int num) {
-		if(this->party == ALICE) {
+		if(this->party == ALICE) {// Alice is the based OT sender (the extended OT receiver)
 			block r1, r2;
-			vector_self_xor(&r1, this->consist_check_VW, num);
+			vector_self_xor(&r1, this->consist_check_VW, num); //r1 =  SUM_i W[i]
 			bool x_prime[128];
 			this->netio->recv_data(x_prime, 128*sizeof(bool));
 			for(int i = 0; i < 128; ++i) {
 				if(x_prime[i])
 					pre_cot_data[i] = pre_cot_data[i] ^ this->Delta_f2k;
 			}
-			pack.packing(&r2, pre_cot_data);
+			pack.packing(&r2, pre_cot_data); //r2 = SUM_i pre_cot_data[i] * X^i
 			r1 = r1 ^ r2;
 			block dig[2];
 			Hash hash;
-			hash.hash_once(dig, &r1, sizeof(block));
+			hash.hash_once(dig, &r1, sizeof(block)); //dig = H(r1)
 			this->netio->send_data(dig, 2*sizeof(block));
 			this->netio->flush();
 		} else {
 			block r1, r2, r3;
-			vector_self_xor(&r1, this->consist_check_VW, num);
-			vector_self_xor(&r2, this->consist_check_chi_alpha, num);
+			vector_self_xor(&r1, this->consist_check_VW, num); // r1 = SUM_i V[i]
+			vector_self_xor(&r2, this->consist_check_chi_alpha, num); // r2 = SUM_i chi_alpha[i]
 			uint64_t pos[2];
 			pos[0] = _mm_extract_epi64(r2, 0);
 			pos[1] = _mm_extract_epi64(r2, 1);
 			bool pre_cot_bool[128];
 			for(int i = 0; i < 2; ++i) {
 				for(int j = 0; j < 64; ++j) {
-					pre_cot_bool[i*64+j] = ((pos[i] & 1) == 1) ^ getLSB(pre_cot_data[i*64+j]);
+					pre_cot_bool[i*64+j] = ((pos[i] & 1) == 1) ^ getLSB(pre_cot_data[i*64+j]); //`pre_cot_bool = r2 XOR pre_ot_choice_bits`, classic OT derandomization. NOTE: the b-th OT message ends with LSB = b 
 					pos[i] >>= 1;
 				}
 			}

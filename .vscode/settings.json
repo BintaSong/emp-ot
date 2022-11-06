@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.oc": "c",
+        "*.oh": "c",
+        "*.mpc": "python",
+        "iostream": "cpp",
+        "istream": "cpp",
+        "ostream": "cpp"
+    }
+}

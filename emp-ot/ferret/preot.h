@@ -35,10 +35,10 @@ class OTPre { public:
 			delete[] bits;
 	}
 
-	void send_pre(block * data, block in_Delta) {
+	void send_pre(block * data, block in_Delta) {// This is for OT sender.  NOTE: pre_data is of length 2*n
 		Delta = in_Delta;
-		ccrh.Hn(pre_data, data, n, pre_data+n);
-		xorBlocks_arr(pre_data+n, data, Delta, n);
+		ccrh.Hn(pre_data, data, n, pre_data+n); // replace the first half of `pre_data` by hash
+		xorBlocks_arr(pre_data+n, data, Delta, n); //the second half of `pre_data` is updated by `pre_data[i] <- pre_data[i] XOR Delta`, then by hash
 		ccrh.Hn(pre_data+n, pre_data+n, n);
 	}
 
@@ -47,9 +47,9 @@ class OTPre { public:
 		ccrh.Hn(pre_data, data, n);
 	}
 
-	void recv_pre(block * data) {
+	void recv_pre(block * data) {// this is for OT receiver
 		for(int i = 0; i < n; ++i)
-			bits[i] = getLSB(data[i]);
+			bits[i] = getLSB(data[i]); // NOTE: For b in [0,1], the b-th OT message ends with LSB = b
 		ccrh.Hn(pre_data, data, n);
 	}
 

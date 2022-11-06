@@ -58,7 +58,7 @@ class SPCOT_Sender { public:
 		secret_sum_f2 = zero_block;
 		block one = makeBlock(0xFFFFFFFFFFFFFFFFLL,0xFFFFFFFFFFFFFFFELL); 
 		for(int i = 0; i < leave_n; ++i) { // all leaves are stored in the front of ggm_tree, see function ggm_tree_gen for details. 
-			ggm_tree[i] = ggm_tree[i] & one; // TODO: why & ? 
+			ggm_tree[i] = ggm_tree[i] & one; // TODO: why & ? => THe LSB is used as the choice bit of for the receiver! see `void recv_pre(block * data)` in `preot.h`
 			secret_sum_f2 = secret_sum_f2 ^ ggm_tree[i];
 		}
 		secret_sum_f2 = secret_sum_f2 ^ secret;

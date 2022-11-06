@@ -19,7 +19,7 @@ FerretCOT<T>::FerretCOT(int party, int threads, T **ios,
 			PRG prg;
 			prg.random_block(&Delta);
 			Delta = Delta & one;
-			Delta = Delta ^ 0x1;
+			Delta = Delta ^ 0x1; //NOTE: why LSB of Delta is 1? => for any pair of OT messages, the b-th OT message always ends with LSB=b, for b in [0,1]
 			setup(Delta, pre_file);
 		} else setup(pre_file);
 	}
@@ -47,7 +47,7 @@ void FerretCOT<T>::extend_initialization() {
 	if(is_malicious) mpcot->set_malicious();
 
 	pre_ot = new OTPre<T>(io, mpcot->tree_height-1, mpcot->tree_n);
-	M = param.k + pre_ot->n + mpcot->consist_check_cot_num;
+	M = param.k + pre_ot->n + mpcot->consist_check_cot_num; //TODO: `M` OTs are used for extension/check
 	ot_limit = param.n - M;
 	ot_used = ot_limit;
 	extend_initialized = true;
@@ -57,8 +57,8 @@ void FerretCOT<T>::extend_initialization() {
 template<typename T>
 void FerretCOT<T>::extend(block* ot_output, MpcotReg<T> *mpcot, OTPre<T> *preot, 
 		LpnF2<T, 10> *lpn, block *ot_input) {
-	if(party == ALICE) mpcot->sender_init(Delta);
-	else mpcot->recver_init();
+	if(party == ALICE) mpcot->sender_init(Delta);// sender sets `Delta`
+	else mpcot->recver_init(); //set the number of items
 	mpcot->mpcot(ot_output, preot, ot_input);
 	lpn->compute(ot_output, ot_input+mpcot->consist_check_cot_num);
 }
@@ -110,7 +110,7 @@ void FerretCOT<T>::setup(std::string pre_file) {
 		io->send_data(&hasfile, sizeof(bool));
 		io->flush();
 	}
-	if(hasfile & hasfile2) {
+	if(hasfile & hasfile2) { // Alice and Bob both have pre_ot_file
 		Delta = (block)read_pre_data128_from_file((void*)ot_pre_data, pre_ot_filename);
 	} else {
 		if(party == BOB) base_cot->cot_gen_pre();
