@@ -47,7 +47,11 @@ void FerretCOT<T>::extend_initialization() {
 	if(is_malicious) mpcot->set_malicious();
 
 	pre_ot = new OTPre<T>(io, mpcot->tree_height-1, mpcot->tree_n);
-	M = param.k + pre_ot->n + mpcot->consist_check_cot_num; //TODO: `M` OTs are used for extension/check
+	M = param.k + pre_ot->n + mpcot->consist_check_cot_num; /* 
+																- param.k: number of base OTs for LPN-based OT extension
+																- pre_ot : number of OTs for mpscot (for ggm trees)
+																- consist_check_cot_num: number of OTs for consistency check, here consist_check_cot_num = 128. 
+															*/
 	ot_limit = param.n - M;
 	ot_used = ot_limit;
 	extend_initialized = true;
@@ -124,8 +128,11 @@ void FerretCOT<T>::setup(std::string pre_file) {
 		block *pre_data_ini = new block[param.k_pre+mpcot_ini.consist_check_cot_num];
 		memset(this->ot_pre_data, 0, param.n_pre*16);
 
-		base_cot->cot_gen(&pre_ot_ini, pre_ot_ini.n);
-		base_cot->cot_gen(pre_data_ini, param.k_pre+mpcot_ini.consist_check_cot_num);
+		base_cot->cot_gen(&pre_ot_ini, pre_ot_ini.n); /*`base_cot` is initlized in constructor function FerretCOT<T>::FerretCOT(***).
+														- `base_cot` constructor function initlizes iknp OT extension, and store generated OT into `pre_ot_ini`.
+														- `pre_ot_ini.n` specifies number of OTs used for GGM trees
+													  */
+		base_cot->cot_gen(pre_data_ini, param.k_pre+mpcot_ini.consist_check_cot_num); // generate remaining OTs for preprocessing and consistency check
 		extend(ot_pre_data, &mpcot_ini, &pre_ot_ini, &lpn, pre_data_ini);
 		delete[] pre_data_ini;
 	}
