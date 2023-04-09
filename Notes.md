@@ -16,4 +16,7 @@
     ```c++
     sender->template send_f2k<OTPre<IO>>(ot, io, i); 
     ```
-- 
+- do not use unsigned int in for loop with. For example:
+    ```c++
+    for(size_t i = n; i >= 0; i--) // FIXME: i will be very large after i = 0 !!!
+    ```

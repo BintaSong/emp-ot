@@ -1,0 +1,51 @@
+#!/bin/bash
+
+argv_list=""
+port="12345"
+pre_setup="0"
+prog="./build/bin/semi_test_batch_OPM_test"
+
+# for LAN setting
+echo "Run LAN test"
+#tc qdisc add dev lo root netem delay 0.0ms rate 1024mbit
+
+for i in 10 12 14 16 18 20;
+do
+	for j in 4 6 8 10;
+	do
+        echo $i  $j
+		$prog 1 $port $j $i $pre_setup & $prog 2 $port $j $i $pre_setup
+        echo "-----------------------------------------------------"
+	done
+done
+#tc qdisc delete dev lo root netem delay 0.0ms rate 1024mbit
+
+
+echo "Run MAN test"
+tc qdisc add dev lo root netem delay 3ms rate 100mbit
+# for MAN setting
+for i in 10 12 14 16 18 20;
+do
+	for j in 4 6 8 10;
+	do
+        echo $i  $j
+		$prog 1 $port $j $i $pre_setup & $prog 2 $port $j $i $pre_setup
+        echo "-----------------------------------------------------"
+	done
+done
+tc qdisc delete dev lo root netem delay 3ms rate 100mbit
+
+
+echo "Run WAN test"
+tc qdisc add dev lo root netem delay 40ms rate 40mbit 
+# for WAN setting
+for i in 10 12 14 16 18 20;
+do
+	for j in 4 6 8 10;
+	do
+        echo $i  $j
+		$prog 1 $port $j $i $pre_setup & $prog 2 $port $j $i $pre_setup
+        echo "-----------------------------------------------------"
+	done
+done
+tc qdisc delete dev lo root netem delay 40ms rate 40mbit 
